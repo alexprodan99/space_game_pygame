@@ -1,6 +1,6 @@
 import os
 import pygame
-from ship import Ship
+from ship import Ship, SHIP_WIDTH, SHIP_HEIGHT
 
 pygame.font.init()
 pygame.mixer.init()
@@ -15,8 +15,11 @@ FPS = 60
 VELOCITY = 5
 BULLET_VELOCITY = 7
 MAX_BULLETS = 3
-SHIP_WIDTH = 55
-SHIP_HEIGHT = 40
+
+
+# Custom events
+RED_HIT = pygame.USEREVENT + 1
+BLUE_HIT = pygame.USEREVENT + 2
 
 # Assets
 BLUE_SPACESHIP_IMAGE = pygame.image.load(
@@ -105,6 +108,35 @@ def blue_handle_movement(keys_pressed, blue_ship):
     if keys_pressed[pygame.K_s] and blue_ship.y + VELOCITY + SHIP_HEIGHT < HEIGHT - 15:
         blue_ship.y += VELOCITY
 
+
+def handle_bullets(red_ship, blue_ship):
+    for bullet in red_ship.bullets:
+        bullet.x -= BULLET_VELOCITY
+        bounding_box = blue_ship.bounding_box
+        if bounding_box.colliderect(bullet):
+            pygame.event.post(pygame.event.Event(BLUE_HIT))
+            red_ship.remove_bullet(bullet)
+        elif bullet.x < 0:
+            red_ship.remove_bullet(bullet)
+            
+    for bullet in blue_ship.bullets:
+        bullet.x += BULLET_VELOCITY
+        bounding_box = red_ship.bounding_box
+        if bounding_box.colliderect(bullet):
+            pygame.event.post(pygame.event.Event(RED_HIT))
+            blue_ship.remove_bullet(bullet)
+        elif bullet.x > WIDTH:
+            blue_ship.remove_bullet(bullet)
+
+
+def draw_winner(text):
+    draw_text = WINNER_FONT.render(text, 1, WHITE)
+    WIN.blit(draw_text, (WIDTH//2 - draw_text.get_width() /
+             2, HEIGHT/2 - draw_text.get_height()/2))
+    pygame.display.update()
+    pygame.time.delay(5000)
+
+
 def main():
     red_ship = Ship(x=700, y=300, health=6, bullets=[])
     blue_ship = Ship(x=100, y=300, health=6, bullets=[])
@@ -117,12 +149,41 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LCTRL and len(blue_ship.bullets) < MAX_BULLETS:
+                    bullet = pygame.Rect(blue_ship.x + SHIP_WIDTH, blue_ship.y + SHIP_HEIGHT // 2 - 2, 10, 5)
+                    blue_ship.add_bullet(bullet)
+                    BULLET_FIRE_SOUND.play()
+                if event.key == pygame.K_RCTRL and len(red_ship.bullets) < MAX_BULLETS:
+                    bullet = pygame.Rect(red_ship.x, red_ship.y + SHIP_HEIGHT // 2 - 2, 10, 5)
+                    red_ship.add_bullet(bullet)
+                    BULLET_FIRE_SOUND.play()
+                    
+            if event.type == RED_HIT:
+                red_ship.health -= 1
+                BULLET_IMPACT_SOUND.play()
+            if event.type == BLUE_HIT:
+                blue_ship.health -= 1
+                BULLET_IMPACT_SOUND.play()
                 
+        
+        winner_text = ""
+        if red_ship.health <= 0:
+            winner_text = "Blue wins!!!"
+        
+        if blue_ship.health <= 0:
+            winner_text = "Red wins!!!"
+            
+        if winner_text != "":
+            draw_winner(winner_text)
+            break
+                    
         keys_pressed = pygame.key.get_pressed()
         red_handle_movement(keys_pressed, red_ship)
         blue_handle_movement(keys_pressed, blue_ship)
+        handle_bullets(red_ship, blue_ship)
         draw_window(red_ship, blue_ship)
-
+    main()
 
 if __name__ == "__main__":
     main()
