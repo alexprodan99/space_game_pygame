@@ -15,17 +15,19 @@ FPS = 60
 VELOCITY = 5
 BULLET_VELOCITY = 7
 MAX_BULLETS = 3
+SHIP_WIDTH = 55
+SHIP_HEIGHT = 40
 
 # Assets
 BLUE_SPACESHIP_IMAGE = pygame.image.load(
     os.path.join("Assets", "Ship_1.png"))
 BLUE_SPACESHIP = pygame.transform.rotate(
-    pygame.transform.scale(BLUE_SPACESHIP_IMAGE, (55, 40)), 270)
+    pygame.transform.scale(BLUE_SPACESHIP_IMAGE, (SHIP_WIDTH, SHIP_HEIGHT)), 270)
 
 RED_SPACESHIP_IMAGE = pygame.image.load(
     os.path.join("Assets", "Ship_2.png"))
 RED_SPACESHIP = pygame.transform.rotate(
-    pygame.transform.scale(RED_SPACESHIP_IMAGE, (55, 40)), 90)
+    pygame.transform.scale(RED_SPACESHIP_IMAGE, (SHIP_WIDTH, SHIP_HEIGHT)), 90)
 SPACE = pygame.transform.scale(pygame.image.load('space.png'), (WIDTH, HEIGHT))
 
 
@@ -81,6 +83,28 @@ def draw_window(red_ship, blue_ship):
     # update
     pygame.display.update()
 
+
+def red_handle_movement(keys_pressed, red_ship):
+    if keys_pressed[pygame.K_LEFT] and red_ship.x - VELOCITY > BORDER.x + BORDER.width:
+        red_ship.x -= VELOCITY
+    if keys_pressed[pygame.K_RIGHT] and red_ship.x + VELOCITY + SHIP_WIDTH < WIDTH:
+        red_ship.x += VELOCITY
+    if keys_pressed[pygame.K_UP] and red_ship.y - VELOCITY > 0:
+        red_ship.y -= VELOCITY
+    if keys_pressed[pygame.K_DOWN] and red_ship.y + VELOCITY + SHIP_HEIGHT < HEIGHT - 15:
+        red_ship.y += VELOCITY
+        
+
+def blue_handle_movement(keys_pressed, blue_ship):
+    if keys_pressed[pygame.K_a] and blue_ship.x - VELOCITY > 0:
+        blue_ship.x -= VELOCITY
+    if keys_pressed[pygame.K_d] and blue_ship.x + VELOCITY + SHIP_WIDTH < BORDER.x:
+        blue_ship.x += VELOCITY
+    if keys_pressed[pygame.K_w] and blue_ship.y - VELOCITY > 0:
+        blue_ship.y -= VELOCITY
+    if keys_pressed[pygame.K_s] and blue_ship.y + VELOCITY + SHIP_HEIGHT < HEIGHT - 15:
+        blue_ship.y += VELOCITY
+
 def main():
     red_ship = Ship(x=700, y=300, health=6, bullets=[])
     blue_ship = Ship(x=100, y=300, health=6, bullets=[])
@@ -93,6 +117,10 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
+                
+        keys_pressed = pygame.key.get_pressed()
+        red_handle_movement(keys_pressed, red_ship)
+        blue_handle_movement(keys_pressed, blue_ship)
         draw_window(red_ship, blue_ship)
 
 
